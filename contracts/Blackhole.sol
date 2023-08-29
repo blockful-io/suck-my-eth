@@ -2,7 +2,7 @@
 pragma solidity ^0.8.9;
 
 contract Blackhole {
-    function suckMyEther() external payable {
+    function suckMyEth() external payable {
         selfdestruct(payable(address(this)));
     }
 }
