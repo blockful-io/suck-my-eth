@@ -1,8 +1,10 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
 
 contract Blackhole {
     function suckMyEth() external payable {
-        selfdestruct(payable(address(this)));
+        assembly {
+            selfdestruct(address())
+        }
     }
 }
