@@ -12,10 +12,10 @@ async function main() {
 
 	console.log("\nBalance of:");
 	console.log("Zero Address: ", ethers.formatEther(balance0x));
-	console.log("Signer Address: ", ethers.formatEther(signer.address));
+	console.log("Signer: ", ethers.formatEther(signer.address));
 
 	const balanceBlackhole = await ethers.provider.getBalance(address);
-	console.log("Balance of Blackhole: ", ethers.formatEther(balanceBlackhole));
+	console.log("Blackhole: ", ethers.formatEther(balanceBlackhole));
 
 	console.log("---------end---------");
 }
