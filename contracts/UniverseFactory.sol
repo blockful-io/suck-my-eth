@@ -30,7 +30,5 @@ contract UniverseFactory {
     function createBlackhole() external payable {
         Blackhole please = new Blackhole();
         please.suckMyEth{value: msg.value}();
-
-        emit BlackholeCreated(address(please), msg.value);
     }
 }
