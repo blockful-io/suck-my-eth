@@ -12,7 +12,7 @@ async function main() {
 	const tx = await Universe.createBlackhole({
 		value: ethers.utils.parseEther("1"),
 	});
-	const receipt = await tx.wait();
+	console.log("tx", tx.hash);
 }
 
 main()
