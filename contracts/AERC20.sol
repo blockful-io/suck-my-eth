@@ -27,11 +27,11 @@ error ERC2612ExpiredSignature(uint256 deadline);
 error ERC2612InvalidSigner(address signer, address owner);
 
 /**
- * @title ERC20
+ * @title Abstract ERC20
  * @author @ownerlessinc | @Blockful_io
- * @dev Implementation without the rubish checks of OpenZeppelin.
+ * @dev Abstract implementation without the rubish checks of OpenZeppelin.
  */
-contract MatterToken is IERC20, IERC20Permit, Ownable {
+abstract contract ERC20 is IERC20, IERC20Permit, Ownable {
     bytes32 private constant PERMIT_TYPEHASH =
         keccak256(
             "Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"
@@ -41,7 +41,7 @@ contract MatterToken is IERC20, IERC20Permit, Ownable {
 
     string public name;
     string public symbol;
-    uint8 public constant decimals = 18;
+    uint8 public immutable decimals;
 
     uint256 public totalSupply;
 
@@ -61,10 +61,12 @@ contract MatterToken is IERC20, IERC20Permit, Ownable {
     constructor(
         string memory _name,
         string memory _symbol,
+        uint8 _decimals,
         address _initialOwner
     ) Ownable(_initialOwner) {
         name = _name;
         symbol = _symbol;
+        decimals = _decimals;
     }
 
     /**
@@ -216,7 +218,7 @@ contract MatterToken is IERC20, IERC20Permit, Ownable {
      *
      * Emits a {Transfer} event with `from` set to the zero address.
      */
-    function mint(address to, uint256 amount) public onlyOwner {
+    function _mint(address to, uint256 amount) internal {
         unchecked {
             totalSupply += amount;
             balanceOf[to] += amount;
@@ -230,17 +232,12 @@ contract MatterToken is IERC20, IERC20Permit, Ownable {
      *
      * Emits a {Transfer} event with `to` set to the zero address.
      */
-    function burn(uint256 amount) public {
-        uint256 fromBalance = balanceOf[msg.sender];
-        if (fromBalance < amount) {
-            revert ERC20InsufficientBalance(msg.sender, fromBalance, amount);
-        }
-
+    function _burn(address from, uint256 amount) internal {
         // Will leaving out of unchedked revert on underflow?
         totalSupply -= amount;
-        balanceOf[msg.sender] -= amount;
+        balanceOf[from] -= amount;
 
-        emit Transfer(msg.sender, address(0), amount);
+        emit Transfer(from, address(0), amount);
     }
 
     /**
@@ -283,7 +280,7 @@ contract MatterToken is IERC20, IERC20Permit, Ownable {
         address from,
         address to,
         uint256 amount
-    ) public returns (bool) {
+    ) public virtual returns (bool) {
         uint256 currentAllowance = allowance[from][msg.sender];
         if (currentAllowance != type(uint256).max) {
             if (currentAllowance < amount) {

@@ -2,24 +2,113 @@ import { ethers } from "hardhat";
 import { expect } from "chai";
 import { Contract } from "ethers";
 
-describe("TestERC20", function () {
+describe("ERC20-Supply", function () {
 	let ERC20: Contract;
-	let signer: any;
+	let owner: any;
 	let userA: any;
 	let userB: any;
 
 	before(async () => {
-		[signer, userA, userB] = await ethers.getSigners();
-		const Factory = await ethers.getContractFactory("MatterToken", signer);
+		[owner, userA, userB] = await ethers.getSigners();
+		const Factory = await ethers.getContractFactory("MatterToken", owner);
 		const Contract = await Factory.deploy(
 			"MatterToken",
 			"MATTER",
-			signer.address
+			owner.address
 		);
 		ERC20 = await Contract.deployed();
 
-		expect(await ERC20.name()).to.equal("TestERC20");
+		expect(await ERC20.name()).to.equal("MatterToken");
 		expect(await ERC20.symbol()).to.equal("MATTER");
 		expect(await ERC20.decimals()).to.equal(18);
+	});
+
+	it("should mint 1000 tokens to owner", async () => {
+		const mintAmount = 1000;
+		const totalSupply = await ERC20.connect(owner).totalSupply();
+
+		await ERC20.connect(owner).mint(owner.address, mintAmount);
+
+		expect(await ERC20.connect(owner).totalSupply()).to.equal(
+			Number(totalSupply) + mintAmount
+		);
+		expect(await ERC20.balanceOf(owner.address)).to.equal(mintAmount);
+	});
+
+	it("should mint 1000 tokens to zero address", async () => {
+		const mintAmount = 1000;
+		const totalSupply = await ERC20.connect(owner).totalSupply();
+
+		await ERC20.connect(owner).mint(ethers.constants.AddressZero, mintAmount);
+
+		expect(await ERC20.connect(owner).totalSupply()).to.equal(
+			Number(totalSupply) + mintAmount
+		);
+		expect(await ERC20.balanceOf(ethers.constants.AddressZero)).to.equal(
+			mintAmount
+		);
+	});
+
+	it("should mint 0 tokens to zero address and not affect anything", async () => {
+		const mintAmount = 0;
+		const totalSupply = await ERC20.connect(owner).totalSupply();
+
+		await ERC20.connect(owner).mint(ethers.constants.AddressZero, mintAmount);
+
+		expect(await ERC20.connect(owner).totalSupply()).to.equal(
+			Number(totalSupply) + mintAmount
+		);
+	});
+
+	it("should failed to mint if not owner", async () => {
+		const mintAmount = 1000;
+
+		await expect(
+			ERC20.connect(userA).mint(userA.address, mintAmount)
+		).to.be.revertedWithCustomError(ERC20, "OwnableUnauthorizedAccount");
+	});
+
+	it("should failed to mint if not owner", async () => {
+		const mintAmount = 1000;
+
+		await expect(
+			ERC20.connect(userA).mint(userA.address, mintAmount)
+		).to.be.revertedWithCustomError(ERC20, "OwnableUnauthorizedAccount");
+	});
+
+	it("should be able to burn owned tokens", async () => {
+		const balanceOf = await ERC20.balanceOf(owner.address);
+
+		await ERC20.connect(owner).burn(balanceOf);
+
+		const balanceAfter = await ERC20.balanceOf(owner.address);
+		expect(balanceAfter).to.equal(0);
+		expect(balanceAfter).to.not.be.equal(balanceOf);
+	});
+
+	it("should be able to burn 0 tokens and not affect anything", async () => {
+		const balanceOf = await ERC20.balanceOf(owner.address);
+		const totalSupply = await ERC20.connect(owner).totalSupply();
+
+		await ERC20.connect(owner).burn(0);
+
+		const balanceAfter = await ERC20.balanceOf(owner.address);
+		expect(balanceAfter).to.be.equal(balanceOf);
+
+		expect(await ERC20.connect(owner).totalSupply()).to.equal(
+			Number(totalSupply)
+		);
+	});
+
+	it("should not be able to burn unexistant tokens", async () => {
+		const mintAmount = 1000;
+		await ERC20.connect(owner).mint(owner.address, mintAmount);
+
+		const balanceOf = await ERC20.balanceOf(owner.address);
+		expect(balanceOf).to.be.lessThan(mintAmount * 2);
+
+		await expect(
+			ERC20.connect(owner).burn(mintAmount * 2)
+		).to.be.revertedWithCustomError(ERC20, "ERC20InsufficientBalance");
 	});
 });
