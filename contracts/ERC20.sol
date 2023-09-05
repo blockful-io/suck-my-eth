@@ -31,7 +31,7 @@ error ERC2612InvalidSigner(address signer, address owner);
  * @author @ownerlessinc | @Blockful_io
  * @dev Implementation without the rubish checks of OpenZeppelin.
  */
-contract MatterToken is IERC20, IERC20Permit, Ownable {
+contract ERC20 is IERC20, IERC20Permit, Ownable {
     bytes32 private constant PERMIT_TYPEHASH =
         keccak256(
             "Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"
@@ -41,7 +41,7 @@ contract MatterToken is IERC20, IERC20Permit, Ownable {
 
     string public name;
     string public symbol;
-    uint8 public constant decimals = 18;
+    uint8 public immutable decimals;
 
     uint256 public totalSupply;
 
@@ -61,10 +61,12 @@ contract MatterToken is IERC20, IERC20Permit, Ownable {
     constructor(
         string memory _name,
         string memory _symbol,
+        uint8 _decimals,
         address _initialOwner
     ) Ownable(_initialOwner) {
         name = _name;
         symbol = _symbol;
+        decimals = _decimals;
     }
 
     /**
