@@ -76,6 +76,46 @@ describe("ERC20-Supply", function () {
 		).to.be.revertedWithCustomError(ERC20, "OwnableUnauthorizedAccount");
 	});
 
+	it("should reject to mint more than Max Uint256", async () => {
+		const mintAmount = ethers.constants.MaxUint256.add(1);
+
+		await expect(ERC20.connect(owner).mint(userA.address, mintAmount)).to.be
+			.rejected;
+	});
+
+	/// Apparently minting max uint256 with unchecked will lower the supply and balance by 1
+	/// Why is that?
+	// it("should reject to mint more than Max Uint256", async () => {
+	// 	const mintAmount = ethers.constants.MaxUint256;
+
+	// 	var balanceOf = await ERC20.balanceOf(userA.address);
+	// 	var totalSupply = await ERC20.connect(owner).totalSupply();
+	// 	console.log(balanceOf.toString());
+	// 	console.log(totalSupply.toString());
+	// 	const tx = await ERC20.connect(owner).mint(userA.address, mintAmount);
+	// 	// const receipt = await tx.wait();
+	// 	// const events = receipt.events[0].args;
+	// 	// console.log(events);
+
+	// 	var balanceOf = await ERC20.balanceOf(userA.address);
+	// 	var totalSupply = await ERC20.connect(owner).totalSupply();
+	// 	console.log(balanceOf.toString());
+	// 	console.log(totalSupply.toString());
+	// 	await ERC20.connect(owner).mint(userA.address, mintAmount);
+
+	// 	var balanceOf = await ERC20.balanceOf(userA.address);
+	// 	var totalSupply = await ERC20.connect(owner).totalSupply();
+	// 	console.log(balanceOf.toString());
+	// 	console.log(totalSupply.toString());
+	// 	await ERC20.connect(owner).mint(userA.address, mintAmount);
+
+	// 	var balanceOf = await ERC20.balanceOf(userA.address);
+	// 	var totalSupply = await ERC20.connect(owner).totalSupply();
+	// 	console.log(balanceOf.toString());
+	// 	console.log(totalSupply.toString());
+	// 	await ERC20.connect(owner).mint(userA.address, mintAmount);
+	// });
+
 	it("should be able to burn owned tokens", async () => {
 		const balanceOf = await ERC20.balanceOf(owner.address);
 

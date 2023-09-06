@@ -217,8 +217,9 @@ contract MatterToken is IERC20, IERC20Permit, Ownable {
      * Emits a {Transfer} event with `from` set to the zero address.
      */
     function mint(address to, uint256 amount) public onlyOwner {
+        // Overflow check required: totalSupply should never overflows
+        totalSupply += amount;
         unchecked {
-            totalSupply += amount;
             balanceOf[to] += amount;
         }
 
@@ -236,9 +237,11 @@ contract MatterToken is IERC20, IERC20Permit, Ownable {
             revert ERC20InsufficientBalance(msg.sender, fromBalance, amount);
         }
 
-        // Will leaving out of unchedked revert on underflow?
-        totalSupply -= amount;
-        balanceOf[msg.sender] -= amount;
+        unchecked {
+            // Overflow not possible: value <= totalSupply or value <= fromBalance <= totalSupply.
+            totalSupply -= amount;
+            balanceOf[msg.sender] -= amount;
+        }
 
         emit Transfer(msg.sender, address(0), amount);
     }

@@ -219,8 +219,9 @@ contract ERC20 is IERC20, IERC20Permit, Ownable {
      * Emits a {Transfer} event with `from` set to the zero address.
      */
     function _mint(address to, uint256 amount) internal {
+        // Overflow check required: The rest of the code assumes that totalSupply never overflows
+        totalSupply += amount;
         unchecked {
-            totalSupply += amount;
             balanceOf[to] += amount;
         }
 
@@ -233,10 +234,16 @@ contract ERC20 is IERC20, IERC20Permit, Ownable {
      * Emits a {Transfer} event with `to` set to the zero address.
      */
     function _burn(address from, uint256 amount) internal {
-        // Will leaving out of unchedked revert on underflow?
-        totalSupply -= amount;
-        balanceOf[from] -= amount;
+        uint256 fromBalance = balanceOf[msg.sender];
+        if (fromBalance < amount) {
+            revert ERC20InsufficientBalance(msg.sender, fromBalance, amount);
+        }
 
+        // Overflow not possible: amount <= fromBalance <= totalSupply.
+        unchecked {
+            totalSupply -= amount;
+            balanceOf[from] = fromBalance - amount;
+        }
         emit Transfer(from, address(0), amount);
     }
 
@@ -253,6 +260,7 @@ contract ERC20 is IERC20, IERC20Permit, Ownable {
             revert ERC20InsufficientBalance(msg.sender, fromBalance, amount);
         }
 
+        // Overflow not possible: amount <= fromBalance <= totalSupply.
         unchecked {
             balanceOf[msg.sender] = fromBalance - amount;
             balanceOf[to] += amount;
@@ -300,6 +308,7 @@ contract ERC20 is IERC20, IERC20Permit, Ownable {
             revert ERC20InsufficientBalance(from, fromBalance, amount);
         }
 
+        // Overflow not possible: amount <= fromBalance <= totalSupply.
         unchecked {
             balanceOf[from] = fromBalance - amount;
             balanceOf[to] += amount;
