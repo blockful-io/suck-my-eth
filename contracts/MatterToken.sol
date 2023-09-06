@@ -58,6 +58,7 @@ contract MatterToken is IERC20, IERC20Permit, IERC20Errors, Ownable {
         allowance[msg.sender][spender] = amount;
 
         emit Approval(msg.sender, spender, amount);
+
         return true;
     }
 
@@ -140,12 +141,10 @@ contract MatterToken is IERC20, IERC20Permit, IERC20Errors, Ownable {
         address spender,
         uint256 addedValue
     ) public returns (bool) {
-        // Should this overflow because of safemath?
+        // Overflow check required: allowance should never overflow
         uint256 updatedAllowance = allowance[msg.sender][spender] + addedValue;
 
-        unchecked {
-            allowance[msg.sender][spender] = updatedAllowance;
-        }
+        allowance[msg.sender][spender] = updatedAllowance;
 
         emit Approval(msg.sender, spender, updatedAllowance);
 
@@ -172,21 +171,26 @@ contract MatterToken is IERC20, IERC20Permit, IERC20Errors, Ownable {
         address spender,
         uint256 requestedDecrease
     ) public returns (bool) {
-        // Will revert in case of overflow because of automatic safeMath
-        uint256 updatedAllowance = allowance[msg.sender][spender] -
-            requestedDecrease;
-        // if (currentAllowance < requestedDecrease) {
-        //     revert ERC20FailedDecreaseAllowance(
-        //         spender,
-        //         currentAllowance,
-        //         requestedDecrease
-        //     );
-        // }
-        unchecked {
-            allowance[msg.sender][spender] = updatedAllowance;
+        uint256 currentAllowance = allowance[msg.sender][spender];
+        if (currentAllowance < requestedDecrease) {
+            revert ERC20FailedDecreaseAllowance(
+                spender,
+                currentAllowance,
+                requestedDecrease
+            );
         }
 
-        emit Approval(msg.sender, spender, updatedAllowance);
+        unchecked {
+            allowance[msg.sender][spender] =
+                currentAllowance -
+                requestedDecrease;
+
+            emit Approval(
+                msg.sender,
+                spender,
+                currentAllowance - requestedDecrease
+            );
+        }
 
         return true;
     }
@@ -197,7 +201,7 @@ contract MatterToken is IERC20, IERC20Permit, IERC20Errors, Ownable {
      * Emits a {Transfer} event with `from` set to the zero address.
      */
     function mint(address to, uint256 amount) public onlyOwner {
-        // Overflow check required: totalSupply should never overflows
+        // Overflow check required: totalSupply should never overflow
         totalSupply += amount;
         unchecked {
             balanceOf[to] += amount;
@@ -218,7 +222,7 @@ contract MatterToken is IERC20, IERC20Permit, IERC20Errors, Ownable {
         }
 
         unchecked {
-            // Overflow not possible: value <= totalSupply or value <= fromBalance <= totalSupply.
+            // Underflow not possible: value <= totalSupply or value <= fromBalance <= totalSupply.
             totalSupply -= amount;
             balanceOf[msg.sender] -= amount;
         }
@@ -244,7 +248,6 @@ contract MatterToken is IERC20, IERC20Permit, IERC20Errors, Ownable {
             balanceOf[to] += amount;
         }
 
-        // gas? var or msg.sender
         emit Transfer(msg.sender, to, amount);
 
         return true;
@@ -291,7 +294,6 @@ contract MatterToken is IERC20, IERC20Permit, IERC20Errors, Ownable {
             balanceOf[to] += amount;
         }
 
-        // gas? var or msg.sender
         emit Transfer(from, to, amount);
 
         return true;
