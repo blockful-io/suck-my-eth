@@ -7,6 +7,9 @@ const { PRIVATE_KEY, SEPOLIA_RPC } = process.env;
 
 const config: HardhatUserConfig = {
 	solidity: "0.8.20",
+	gasReporter: {
+		enabled: true,
+	},
 	networks: {
 		sepolia: {
 			url: SEPOLIA_RPC,
