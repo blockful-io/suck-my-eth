@@ -23,6 +23,19 @@ describe("ERC20-Supply", function () {
 		expect(await ERC20.decimals()).to.equal(18);
 	});
 
+	it("should mint Max Uint256 then burn", async () => {
+		const mintAmount = ethers.constants.MaxUint256;
+		await ERC20.connect(owner).mint(owner.address, mintAmount);
+
+		expect(await ERC20.balanceOf(owner.address)).to.be.equal(mintAmount);
+		expect(await ERC20.totalSupply()).to.be.equal(mintAmount);
+
+		await ERC20.connect(owner).burn(mintAmount);
+
+		expect(await ERC20.balanceOf(owner.address)).to.be.equal(0);
+		expect(await ERC20.totalSupply()).to.be.equal(0);
+	});
+
 	it("should mint 1000 tokens to owner", async () => {
 		const mintAmount = 1000;
 		const totalSupply = await ERC20.connect(owner).totalSupply();
@@ -79,6 +92,12 @@ describe("ERC20-Supply", function () {
 	it("should reject to mint more than Max Uint256", async () => {
 		const mintAmount = ethers.constants.MaxUint256.add(1);
 
+		await expect(ERC20.connect(owner).mint(userA.address, mintAmount)).to.be
+			.rejected;
+	});
+
+	it("should reject to mint batches of Max Uint256", async () => {
+		const mintAmount = ethers.constants.MaxUint256;
 		await expect(ERC20.connect(owner).mint(userA.address, mintAmount)).to.be
 			.rejected;
 	});
