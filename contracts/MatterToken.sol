@@ -4,34 +4,14 @@ pragma solidity ^0.8.20;
 import {IERC20} from "./IERC20.sol";
 import {IERC20Permit} from "./IERC20Permit.sol";
 import {Ownable} from "./Ownable.sol";
-
-// Having the errors here or in a separate file?
-// What consumes more gas?
-error ERC20InsufficientBalance(
-    address account,
-    uint256 balance,
-    uint256 amount
-);
-error ERC20InsufficientAllowance(
-    address account,
-    uint256 balance,
-    uint256 amount
-);
-error ERC20FailedDecreaseAllowance(
-    address account,
-    uint256 balance,
-    uint256 amount
-);
-error ERC20PermitInvalidNonce(address account, uint256 nonce);
-error ERC2612ExpiredSignature(uint256 deadline);
-error ERC2612InvalidSigner(address signer, address owner);
+import {IERC20Errors} from "./IERC20Errors.sol";
 
 /**
  * @title ERC20
  * @author @ownerlessinc | @Blockful_io
  * @dev Implementation without the rubish checks of OpenZeppelin.
  */
-contract MatterToken is IERC20, IERC20Permit, Ownable {
+contract MatterToken is IERC20, IERC20Permit, IERC20Errors, Ownable {
     bytes32 private constant PERMIT_TYPEHASH =
         keccak256(
             "Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"

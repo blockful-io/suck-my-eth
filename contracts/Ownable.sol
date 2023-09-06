@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-// Error out or inside, what consumes more gas?
-error OwnableUnauthorizedAccount(address account);
-
 /**
  * @dev Contract module which provides a basic access control mechanism, where
  * there is an account (an owner) that can be granted exclusive access to
@@ -21,6 +18,11 @@ abstract contract Ownable {
      * @dev Current owner of the contract
      */
     address private _owner;
+
+    /**
+     * @dev Emitted when the caller is not the owner.
+     */
+    error OwnableUnauthorizedAccount(address account);
 
     /**
      * @dev Emitted when the ownership of the contract changes.
