@@ -11,13 +11,13 @@ import {IERC20Errors} from "./IERC20Errors.sol";
  * @author @ownerlessinc | @Blockful_io
  * @dev Implementation without the rubish checks of OpenZeppelin.
  */
-contract MatterToken is IERC20, IERC20Permit, IERC20Errors, Ownable {
-    bytes32 private constant PERMIT_TYPEHASH =
+contract BlackholeToken is IERC20, IERC20Permit, IERC20Errors, Ownable {
+    bytes32 public constant PERMIT_TYPEHASH =
         keccak256(
             "Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"
         );
 
-    bytes32 private immutable DOMAIN_TYPEHASH = DOMAIN_SEPARATOR();
+    bytes32 public immutable DOMAIN_TYPEHASH = DOMAIN_SEPARATOR();
 
     string public name;
     string public symbol;
@@ -62,6 +62,40 @@ contract MatterToken is IERC20, IERC20Permit, IERC20Errors, Ownable {
         return true;
     }
 
+    function permit2(
+        address owner,
+        address spender,
+        uint256 value,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) public view returns (address) {
+        uint256 nonce = nonces[owner];
+        return
+            ecrecover(
+                keccak256(
+                    abi.encodePacked(
+                        hex"19_01",
+                        DOMAIN_TYPEHASH,
+                        keccak256(
+                            abi.encode(
+                                PERMIT_TYPEHASH,
+                                owner,
+                                spender,
+                                value,
+                                nonce,
+                                deadline
+                            )
+                        )
+                    )
+                ),
+                v,
+                r,
+                s
+            );
+    }
+
     /**
      * @dev See {IERC20Permit-permit}.
      */
@@ -82,7 +116,7 @@ contract MatterToken is IERC20, IERC20Permit, IERC20Errors, Ownable {
             address signer = ecrecover(
                 keccak256(
                     abi.encodePacked(
-                        hex"1901",
+                        hex"19_01",
                         DOMAIN_TYPEHASH,
                         keccak256(
                             abi.encode(

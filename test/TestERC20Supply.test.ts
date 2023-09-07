@@ -10,16 +10,12 @@ describe("ERC20-Supply", function () {
 
 	before(async () => {
 		[owner, userA, userB] = await ethers.getSigners();
-		const Factory = await ethers.getContractFactory("MatterToken", owner);
-		const Contract = await Factory.deploy(
-			"MatterToken",
-			"MATTER",
-			owner.address
-		);
+		const Factory = await ethers.getContractFactory("BlackholeToken", owner);
+		const Contract = await Factory.deploy("Blackhole", "BLACK", owner.address);
 		ERC20 = await Contract.deployed();
 
-		expect(await ERC20.name()).to.equal("MatterToken");
-		expect(await ERC20.symbol()).to.equal("MATTER");
+		expect(await ERC20.name()).to.equal("Blackhole");
+		expect(await ERC20.symbol()).to.equal("BLACK");
 		expect(await ERC20.decimals()).to.equal(18);
 	});
 
