@@ -91,29 +91,26 @@ describe("TestERC20", function () {
 		const permit = {
 			owner: _owner,
 			spender: spender,
-			value: value.toString(),
+			value: value,
 			nonce: nonce,
 			deadline: deadline,
 		};
 
 		const signature = await owner._signTypedData(domain, types, permit);
-
 		const sig = ethers.utils.splitSignature(signature);
 
-		const res = await ERC20.permit2(
-			_owner,
-			spender,
-			1000,
+		await ERC20.permit(
+			owner.address,
+			userA.address,
+			value,
 			deadline,
 			sig.v,
 			sig.r,
 			sig.s
 		);
-		console.log(res);
-		console.log(owner.address);
-
-		// await ERC20.permit(owner.address, userA.address, 1000, deadline, v, r, s);
-		// expect(await ERC20.allowance(owner.address, userA.address)).to.equal(1000);
+		expect(await ERC20.allowance(owner.address, userA.address)).to.equal(
+			value.toString()
+		);
 	});
 });
 

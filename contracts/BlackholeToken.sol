@@ -6,18 +6,26 @@ import {IERC20Permit} from "./IERC20Permit.sol";
 import {Ownable} from "./Ownable.sol";
 import {IERC20Errors} from "./IERC20Errors.sol";
 
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+
 /**
  * @title ERC20
  * @author @ownerlessinc | @Blockful_io
  * @dev Implementation without the rubish checks of OpenZeppelin.
  */
 contract BlackholeToken is IERC20, IERC20Permit, IERC20Errors, Ownable {
+    using ECDSA for bytes32;
+
     bytes32 public constant PERMIT_TYPEHASH =
         keccak256(
             "Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"
         );
 
     bytes32 public immutable DOMAIN_TYPEHASH = DOMAIN_SEPARATOR();
+
+    function test() public view returns (uint256) {
+        return block.chainid;
+    }
 
     string public name;
     string public symbol;
@@ -48,6 +56,24 @@ contract BlackholeToken is IERC20, IERC20Permit, IERC20Errors, Ownable {
     }
 
     /**
+     * @dev See {IERC20Permit-DOMAIN_SEPARATOR}.
+     */
+    function DOMAIN_SEPARATOR() public view returns (bytes32) {
+        return
+            keccak256(
+                abi.encode(
+                    keccak256(
+                        "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
+                    ),
+                    keccak256(bytes(name)),
+                    keccak256(bytes("1")),
+                    block.chainid,
+                    address(this)
+                )
+            );
+    }
+
+    /**
      * @dev See {IERC20-approve}.
      *
      * NOTE: If `amount` is the maximum `uint256`, the allowance is not updated on
@@ -60,40 +86,6 @@ contract BlackholeToken is IERC20, IERC20Permit, IERC20Errors, Ownable {
         emit Approval(msg.sender, spender, amount);
 
         return true;
-    }
-
-    function permit2(
-        address owner,
-        address spender,
-        uint256 value,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
-    ) public view returns (address) {
-        uint256 nonce = nonces[owner];
-        return
-            ecrecover(
-                keccak256(
-                    abi.encodePacked(
-                        hex"19_01",
-                        DOMAIN_TYPEHASH,
-                        keccak256(
-                            abi.encode(
-                                PERMIT_TYPEHASH,
-                                owner,
-                                spender,
-                                value,
-                                nonce,
-                                deadline
-                            )
-                        )
-                    )
-                ),
-                v,
-                r,
-                s
-            );
     }
 
     /**
@@ -117,7 +109,7 @@ contract BlackholeToken is IERC20, IERC20Permit, IERC20Errors, Ownable {
                 keccak256(
                     abi.encodePacked(
                         hex"19_01",
-                        DOMAIN_TYPEHASH,
+                        DOMAIN_SEPARATOR(),
                         keccak256(
                             abi.encode(
                                 PERMIT_TYPEHASH,
@@ -134,33 +126,14 @@ contract BlackholeToken is IERC20, IERC20Permit, IERC20Errors, Ownable {
                 r,
                 s
             );
-
             if (signer != owner) {
                 revert ERC2612InvalidSigner(signer, owner);
             }
-
-            allowance[owner][spender] = value;
         }
 
-        emit Approval(owner, spender, value);
-    }
+        allowance[owner][spender] = value;
 
-    /**
-     * @dev See {IERC20Permit-DOMAIN_SEPARATOR}.
-     */
-    function DOMAIN_SEPARATOR() public view returns (bytes32) {
-        return
-            keccak256(
-                abi.encode(
-                    keccak256(
-                        "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
-                    ),
-                    keccak256(bytes(name)),
-                    keccak256("1"),
-                    block.chainid,
-                    address(this)
-                )
-            );
+        emit Approval(owner, spender, value);
     }
 
     /**
