@@ -99,6 +99,9 @@ contract BlackholeToken is IERC20, IERC20Permit, IERC20Errors, Ownable {
 
     /**
      * @dev See {IERC20Permit-permit}.
+     *
+     * NOTE: `spender` can be the zero address. Checking this on-chain is a bad
+     * usage of gas.
      */
     function permit(
         address owner,
@@ -113,8 +116,9 @@ contract BlackholeToken is IERC20, IERC20Permit, IERC20Errors, Ownable {
             revert ERC2612ExpiredSignature(deadline);
         }
 
+        // Overflow not possible: nonces will never reach max uint256.
         unchecked {
-            address signer = ecrecover(
+            address recoveredAddress = ecrecover(
                 keccak256(
                     abi.encodePacked(
                         hex"19_01",
@@ -135,8 +139,8 @@ contract BlackholeToken is IERC20, IERC20Permit, IERC20Errors, Ownable {
                 r,
                 s
             );
-            if (signer != owner) {
-                revert ERC2612InvalidSigner(signer, owner);
+            if (recoveredAddress != owner) {
+                revert ERC2612InvalidSigner(recoveredAddress, owner);
             }
         }
 
@@ -222,7 +226,7 @@ contract BlackholeToken is IERC20, IERC20Permit, IERC20Errors, Ownable {
         totalSupply += amount;
 
         unchecked {
-            // Underflow not possible: amount <= totalSupply.
+            // Overflow not possible: amount <= totalSupply.
             balanceOf[to] += amount;
         }
 
@@ -266,7 +270,7 @@ contract BlackholeToken is IERC20, IERC20Permit, IERC20Errors, Ownable {
             revert ERC20InsufficientBalance(msg.sender, fromBalance, amount);
         }
 
-        // Underflow not possible: amount <= totalSupply or amount <= fromBalance <= totalSupply.
+        // Underflow and overflow not possible: amount <= totalSupply or amount <= fromBalance <= totalSupply.
         unchecked {
             balanceOf[msg.sender] = fromBalance - amount;
             balanceOf[to] += amount;
@@ -323,5 +327,70 @@ contract BlackholeToken is IERC20, IERC20Permit, IERC20Errors, Ownable {
         emit Transfer(from, to, amount);
 
         return true;
+    }
+
+    /**
+     * @dev Allows `transferFrom` to be used with the `owner`'s signature.
+     *
+     * Requirements:
+     *
+     * - `deadline` must be a timestamp in the future.
+     * - `v`, `r` and `s` must be a valid `secp256k1` signature from `owner`
+     * over the EIP712-formatted function arguments.
+     * - the signature must use `owner`'s current nonce (see {ERC20Permit-nonces}).
+     */
+    function permitTransfer(
+        address owner,
+        address spender,
+        uint256 value,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) public {
+        if (block.timestamp > deadline) {
+            revert ERC2612ExpiredSignature(deadline);
+        }
+
+        uint256 fromBalance = balanceOf[owner];
+        if (fromBalance < value) {
+            revert ERC20InsufficientBalance(owner, fromBalance, value);
+        }
+
+        // Overflow not possible: nonces will never reach max uint256.
+        unchecked {
+            address recoveredAddress = ecrecover(
+                keccak256(
+                    abi.encodePacked(
+                        hex"19_01",
+                        DOMAIN_SEPARATOR,
+                        keccak256(
+                            abi.encode(
+                                PERMIT_TYPEHASH,
+                                owner,
+                                spender,
+                                value,
+                                nonces[owner]++,
+                                deadline
+                            )
+                        )
+                    )
+                ),
+                v,
+                r,
+                s
+            );
+            if (recoveredAddress != owner) {
+                revert ERC2612InvalidSigner(recoveredAddress, owner);
+            }
+        }
+
+        // Underflow and overflow not possible: value <= totalSupply or value <= fromBalance <= totalSupply.
+        unchecked {
+            balanceOf[owner] = fromBalance - value;
+            balanceOf[spender] += value;
+        }
+
+        emit Transfer(owner, spender, value);
     }
 }
