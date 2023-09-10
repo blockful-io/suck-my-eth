@@ -100,25 +100,16 @@ describe("TestERC20", function () {
 		const signature = await owner._signTypedData(domain, types, permit);
 		const sig = ethers.utils.splitSignature(signature);
 
-		await ERC20.permit(
-			owner.address,
-			userA.address,
-			value,
-			deadline,
-			sig.v,
-			sig.r,
-			sig.s
-		);
-		expect(await ERC20.allowance(owner.address, userA.address)).to.equal(
-			value.toString()
-		);
+		await ERC20.permit(_owner, spender, value, deadline, sig.v, sig.r, sig.s);
+
+		expect(await ERC20.allowance(_owner, spender)).to.equal(value.toString());
 	});
 
 	it("Should not be able to use a permit a second time", async () => {
 		const _owner = owner.address;
 		const spender = userA.address;
 		const value = 1000;
-		const nonce = await ERC20.nonces(owner.address);
+		const nonce = await ERC20.nonces(_owner);
 		const deadline = ethers.constants.MaxUint256;
 
 		const domain = {
@@ -150,15 +141,12 @@ describe("TestERC20", function () {
 		const sig = ethers.utils.splitSignature(signature);
 
 		await expect(
-			ERC20.permit(
-				owner.address,
-				userA.address,
-				value,
-				deadline,
-				sig.v,
-				sig.r,
-				sig.s
-			)
+			ERC20.permit(_owner, spender, value, deadline, sig.v, sig.r, sig.s)
 		).to.be.revertedWithCustomError(ERC20, "ERC2612InvalidSigner");
 	});
+
+	it("Should not be able to use an expired permit", async () => {});
+	it("Should not be able to use a permit with wrong signer", async () => {});
+	it("Should consume allowance when used", async () => {});
+	it("Should not consume allowance when set as max uint256", async () => {});
 });

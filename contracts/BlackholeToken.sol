@@ -84,20 +84,6 @@ contract BlackholeToken is IERC20, IERC20Permit, IERC20Errors, Ownable {
     }
 
     /**
-     * @dev See {IERC20-approve}.
-     *
-     * NOTE: If `amount` is the maximum `uint256`, the allowance is not updated on
-     * `transferFrom`. This is semantically equivalent to an infinite approval.
-     */
-    function approve(address spender, uint256 amount) public returns (bool) {
-        allowance[msg.sender][spender] = amount;
-
-        emit Approval(msg.sender, spender, amount);
-
-        return true;
-    }
-
-    /**
      * @dev See {IERC20Permit-permit}.
      *
      * NOTE: `spender` can be the zero address. Checking this on-chain is a bad
@@ -147,6 +133,20 @@ contract BlackholeToken is IERC20, IERC20Permit, IERC20Errors, Ownable {
         allowance[owner][spender] = value;
 
         emit Approval(owner, spender, value);
+    }
+
+    /**
+     * @dev See {IERC20-approve}.
+     *
+     * NOTE: If `amount` is the maximum `uint256`, the allowance is not updated on
+     * `transferFrom`. This is semantically equivalent to an infinite approval.
+     */
+    function approve(address spender, uint256 amount) public returns (bool) {
+        allowance[msg.sender][spender] = amount;
+
+        emit Approval(msg.sender, spender, amount);
+
+        return true;
     }
 
     /**
@@ -352,29 +352,21 @@ contract BlackholeToken is IERC20, IERC20Permit, IERC20Errors, Ownable {
             revert ERC2612ExpiredSignature(deadline);
         }
 
-        uint256 fromBalance = balanceOf[owner];
-        if (fromBalance < value) {
-            revert ERC20InsufficientBalance(owner, fromBalance, value);
-        }
-
         // Overflow not possible: nonces will never reach max uint256.
         unchecked {
+            bytes32 structHash = keccak256(
+                abi.encode(
+                    PERMIT_TYPEHASH,
+                    owner,
+                    spender,
+                    value,
+                    nonces[owner]++,
+                    deadline
+                )
+            );
             address recoveredAddress = ecrecover(
                 keccak256(
-                    abi.encodePacked(
-                        hex"19_01",
-                        DOMAIN_SEPARATOR,
-                        keccak256(
-                            abi.encode(
-                                PERMIT_TYPEHASH,
-                                owner,
-                                spender,
-                                value,
-                                nonces[owner]++,
-                                deadline
-                            )
-                        )
-                    )
+                    abi.encodePacked(hex"19_01", DOMAIN_SEPARATOR, structHash)
                 ),
                 v,
                 r,
@@ -383,6 +375,11 @@ contract BlackholeToken is IERC20, IERC20Permit, IERC20Errors, Ownable {
             if (recoveredAddress != owner) {
                 revert ERC2612InvalidSigner(recoveredAddress, owner);
             }
+        }
+
+        uint256 fromBalance = balanceOf[owner];
+        if (fromBalance < value) {
+            revert ERC20InsufficientBalance(owner, fromBalance, value);
         }
 
         // Underflow and overflow not possible: value <= totalSupply or value <= fromBalance <= totalSupply.
