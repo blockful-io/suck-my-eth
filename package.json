@@ -1,6 +1,7 @@
 {
 	"scripts": {
 		"compile": "npx hardhat compile",
+		"clean": "npx hardhat clean",
 		"test": "npx hardhat test"
 	},
 	"devDependencies": {

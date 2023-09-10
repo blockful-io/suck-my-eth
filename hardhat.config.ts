@@ -11,10 +11,10 @@ const config: HardhatUserConfig = {
 		enabled: true,
 	},
 	networks: {
-		sepolia: {
-			url: SEPOLIA_RPC,
-			accounts: [`${PRIVATE_KEY}`],
-		},
+		// sepolia: {
+		// 	url: SEPOLIA_RPC,
+		// 	accounts: [`${PRIVATE_KEY}`],
+		// },
 	},
 };
 

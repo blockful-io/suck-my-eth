@@ -12,22 +12,19 @@ import {Blackhole} from "./Blackhole.sol";
  *
  * @title UniverseFactory
  * @author @ownerlessinc | @alextnetto | @Blockful_io
- * @dev Factory contract to create Blackhole contracts which sucks all
- * the ETH sent to it by selfdestructing. This is a demonstration of
- * how to permanently delete Eth. This happens because the selfdestruct
- * can send ether to itself prior to set the address balance to 0.
+ * @dev Factory contract to create Blackhole contracts which sucks
+ * all the ETH sent to it by selfdestructing.This happens because the
+ * selfdestruct can send ether to itself prior to set the address balance to 0.
  *
- * !IMPORTANT: This is permanently reduce ETH total supply.
+ * !IMPORTANT: This permanently reduces the Ethereum total supply.
  */
 contract UniverseFactory {
-    event BlackholeCreated(address indexed addr, uint256 ethAmount);
-
     /**
      * @dev Creates a new Blackhole contract and redirects the ETH
      * sent to this function to the new contract.
      * The contract will be destroyed in the same transaction.
      */
-    function createBlackhole() external payable {
+    receive() external payable {
         Blackhole please = new Blackhole();
         please.suckMyEth{value: msg.value}();
     }
