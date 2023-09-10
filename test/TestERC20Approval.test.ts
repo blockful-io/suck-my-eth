@@ -60,11 +60,12 @@ describe("TestERC20", function () {
 
 	it("Should not be able to decrease allowance of 1000 tokens to userA when allowance is 0", async () => {
 		await ERC20.approve(userA.address, 0);
-		await expect(ERC20.decreaseAllowance(userA.address, 1000)).to.be.rejected;
+		await expect(
+			ERC20.decreaseAllowance(userA.address, 1000)
+		).to.be.revertedWithCustomError(ERC20, "ERC20FailedDecreaseAllowance");
 	});
 
-	it("Should be able to permit userC to move tokens of owner", async () => {
-		// Permit elements
+	it("Should be able to permit userA to move tokens of owner", async () => {
 		const _owner = owner.address;
 		const spender = userA.address;
 		const value = 1000;
@@ -112,37 +113,52 @@ describe("TestERC20", function () {
 			value.toString()
 		);
 	});
+
+	it("Should not be able to use a permit a second time", async () => {
+		const _owner = owner.address;
+		const spender = userA.address;
+		const value = 1000;
+		const nonce = await ERC20.nonces(owner.address);
+		const deadline = ethers.constants.MaxUint256;
+
+		const domain = {
+			name: "Blackhole",
+			version: "1",
+			chainId: (await ethers.provider.getNetwork()).chainId,
+			verifyingContract: ERC20.address,
+		};
+
+		const types = {
+			Permit: [
+				{ name: "owner", type: "address" },
+				{ name: "spender", type: "address" },
+				{ name: "value", type: "uint256" },
+				{ name: "nonce", type: "uint256" },
+				{ name: "deadline", type: "uint256" },
+			],
+		};
+
+		const permit = {
+			owner: _owner,
+			spender: spender,
+			value: value,
+			nonce: nonce.sub(1),
+			deadline: deadline,
+		};
+
+		const signature = await owner._signTypedData(domain, types, permit);
+		const sig = ethers.utils.splitSignature(signature);
+
+		await expect(
+			ERC20.permit(
+				owner.address,
+				userA.address,
+				value,
+				deadline,
+				sig.v,
+				sig.r,
+				sig.s
+			)
+		).to.be.revertedWithCustomError(ERC20, "ERC2612InvalidSigner");
+	});
 });
-
-// const signatureEthers = await owner._signTypedData(
-// 	{
-// 		name: "Blackhole",
-// 		version: "1",
-// 		chainId: 31337,
-// 		verifyingContract: ERC20.address,
-// 	},
-// 	{
-// 		Permit: [
-// 			{ name: "owner", type: "address" },
-// 			{ name: "spender", type: "address" },
-// 			{ name: "value", type: "uint256" },
-// 			{ name: "nonce", type: "uint256" },
-// 			{ name: "deadline", type: "uint256" },
-// 		],
-// 	},
-// 	{
-// 		owner: _owner,
-// 		spender: spender,
-// 		value: value,
-// 		nonce: nonce,
-// 		deadline: deadline,
-// 	}
-// );
-// console.log(signatureEthers);
-
-// const structHash = ethers.utils.keccak256(
-// 	ethers.utils.defaultAbiCoder.encode(
-// 		["bytes32", "address", "address", "uint256", "uint256", "uint256"],
-// 		[permitTypehash, _owner, spender, value, nonce.add(1), deadline]
-// 	)
-// );

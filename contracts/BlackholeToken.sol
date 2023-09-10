@@ -3,74 +3,84 @@ pragma solidity ^0.8.20;
 
 import {IERC20} from "./IERC20.sol";
 import {IERC20Permit} from "./IERC20Permit.sol";
-import {Ownable} from "./Ownable.sol";
 import {IERC20Errors} from "./IERC20Errors.sol";
-
-import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import {Ownable} from "./Ownable.sol";
 
 /**
- * @title ERC20
  * @author @ownerlessinc | @Blockful_io
- * @dev Implementation without the rubish checks of OpenZeppelin.
+ * @dev Light ERC20 standard with Permit and Ownable for the Blackhole Token.
  */
 contract BlackholeToken is IERC20, IERC20Permit, IERC20Errors, Ownable {
-    using ECDSA for bytes32;
-
+    /// The bytes32 signature of the permit function and args name and type.
     bytes32 public constant PERMIT_TYPEHASH =
         keccak256(
             "Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"
         );
 
-    bytes32 public immutable DOMAIN_TYPEHASH = DOMAIN_SEPARATOR();
+    /// @dev See {IERC20Permit-DOMAIN_SEPARATOR}.
+    bytes32 public immutable DOMAIN_SEPARATOR;
 
-    function test() public view returns (uint256) {
-        return block.chainid;
-    }
-
+    /// The name of the Token.
     string public name;
-    string public symbol;
-    uint8 public constant decimals = 18;
 
+    /// The tick of the Token.
+    string public symbol;
+
+    /// The total supply of the Token.
     uint256 public totalSupply;
 
+    /// Map accounts to spender to the allowed transfereable amount.
     mapping(address account => mapping(address spender => uint256))
         public allowance;
 
+    /// Map accounts to balance of Tokens.
     mapping(address account => uint256) public balanceOf;
 
+    /// Map accounts to its current nonce.
     mapping(address => uint256) public nonces;
 
     /**
-     * @dev Sets the values for {name}, {symbol} and {decimals}.
+     * @dev Sets the values for {name}, {symbol} and {owner}.
      *
-     * All three of these values are immutable: they can only be set once during
-     * construction.
+     * https://eips.ethereum.org/EIPS/eip-712[EIP 712] is a standard for
+     * hashing and signing of typed structured data.
      */
     constructor(
         string memory _name,
         string memory _symbol,
-        address _initialOwner
-    ) Ownable(_initialOwner) {
+        address initialOwner
+    ) Ownable(initialOwner) {
         name = _name;
         symbol = _symbol;
+
+        DOMAIN_SEPARATOR = keccak256(
+            abi.encode(
+                keccak256(
+                    "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
+                ),
+                keccak256(bytes(name)),
+                keccak256(bytes("1")),
+                block.chainid,
+                address(this)
+            )
+        );
     }
 
     /**
-     * @dev See {IERC20Permit-DOMAIN_SEPARATOR}.
+     * @dev Returns the number of decimals used to get its user representation.
+     * For example, if `decimals` equals `2`, a balance of `505` tokens should
+     * be displayed to a user as `5.05` (`505 / 10 ** 2`).
+     *
+     * Tokens usually opt for a value of 18, imitating the relationship between
+     * Ether and Wei. This is the default value returned by this function, unless
+     * it's overridden.
+     *
+     * NOTE: This information is only used for _display_ purposes: it in
+     * no way affects any of the arithmetic of the contract, including
+     * {IERC20-balanceOf} and {IERC20-transfer}.
      */
-    function DOMAIN_SEPARATOR() public view returns (bytes32) {
-        return
-            keccak256(
-                abi.encode(
-                    keccak256(
-                        "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
-                    ),
-                    keccak256(bytes(name)),
-                    keccak256(bytes("1")),
-                    block.chainid,
-                    address(this)
-                )
-            );
+    function decimals() public view virtual returns (uint8) {
+        return 18;
     }
 
     /**
@@ -78,7 +88,6 @@ contract BlackholeToken is IERC20, IERC20Permit, IERC20Errors, Ownable {
      *
      * NOTE: If `amount` is the maximum `uint256`, the allowance is not updated on
      * `transferFrom`. This is semantically equivalent to an infinite approval.
-     *
      */
     function approve(address spender, uint256 amount) public returns (bool) {
         allowance[msg.sender][spender] = amount;
@@ -109,7 +118,7 @@ contract BlackholeToken is IERC20, IERC20Permit, IERC20Errors, Ownable {
                 keccak256(
                     abi.encodePacked(
                         hex"19_01",
-                        DOMAIN_SEPARATOR(),
+                        DOMAIN_SEPARATOR,
                         keccak256(
                             abi.encode(
                                 PERMIT_TYPEHASH,
@@ -188,6 +197,7 @@ contract BlackholeToken is IERC20, IERC20Permit, IERC20Errors, Ownable {
         }
 
         unchecked {
+            // Underflow not possible: requestedDecrease <= currentAllowance.
             allowance[msg.sender][spender] =
                 currentAllowance -
                 requestedDecrease;
@@ -210,7 +220,9 @@ contract BlackholeToken is IERC20, IERC20Permit, IERC20Errors, Ownable {
     function mint(address to, uint256 amount) public onlyOwner {
         // Overflow check required: totalSupply should never overflow
         totalSupply += amount;
+
         unchecked {
+            // Underflow not possible: amount <= totalSupply.
             balanceOf[to] += amount;
         }
 
@@ -219,6 +231,10 @@ contract BlackholeToken is IERC20, IERC20Permit, IERC20Errors, Ownable {
 
     /**
      * @dev Destroys an `amount` of tokens from `from` by lowering the total supply.
+     *
+     * Requirements:
+     *
+     * - the caller must have a balance of at least `amount`.
      *
      * Emits a {Transfer} event with `to` set to the zero address.
      */
@@ -229,7 +245,7 @@ contract BlackholeToken is IERC20, IERC20Permit, IERC20Errors, Ownable {
         }
 
         unchecked {
-            // Underflow not possible: value <= totalSupply or value <= fromBalance <= totalSupply.
+            // Underflow not possible: amount <= totalSupply or amount <= fromBalance <= totalSupply.
             totalSupply -= amount;
             balanceOf[msg.sender] -= amount;
         }
@@ -250,6 +266,7 @@ contract BlackholeToken is IERC20, IERC20Permit, IERC20Errors, Ownable {
             revert ERC20InsufficientBalance(msg.sender, fromBalance, amount);
         }
 
+        // Underflow not possible: amount <= totalSupply or amount <= fromBalance <= totalSupply.
         unchecked {
             balanceOf[msg.sender] = fromBalance - amount;
             balanceOf[to] += amount;
@@ -286,6 +303,7 @@ contract BlackholeToken is IERC20, IERC20Permit, IERC20Errors, Ownable {
                     amount
                 );
             }
+            // Underflow not possible: amount <= currentAllowance
             unchecked {
                 allowance[from][msg.sender] = currentAllowance - amount;
             }
@@ -296,6 +314,7 @@ contract BlackholeToken is IERC20, IERC20Permit, IERC20Errors, Ownable {
             revert ERC20InsufficientBalance(from, fromBalance, amount);
         }
 
+        // Underflow and overflow not possible: amount <= fromBalance and amount <= totalSupply.
         unchecked {
             balanceOf[from] = fromBalance - amount;
             balanceOf[to] += amount;
