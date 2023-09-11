@@ -1,18 +1,31 @@
 import { ethers } from "hardhat";
 
 async function main() {
-	// Get the signer, the Factory bytecode and abi to deploy the contract
+	// Get the signer which will host the fees
 	const [signer] = await ethers.getSigners();
-	const Factory = await ethers.getContractFactory("UniverseFactory");
-	const Universe = await Factory.deploy();
-	await Universe.deployed();
 
-	// Create the blackhole contract, call selfdestruct in the same
-	// transactions, then get the receipt to fetch events and gas used
-	const tx = await Universe.createBlackhole({
-		value: ethers.utils.parseEther("1"),
-	});
-	console.log("tx", tx.hash);
+	// Deploy Blackhole Token
+	const ERCFactory = await ethers.getContractFactory("BlackholeToken", signer);
+	const TokenContract = await ERCFactory.deploy(
+		"Blackhole",
+		"BLACK",
+		signer.address
+	);
+	const Black = await TokenContract.deployed();
+
+	// Deploy Universe Factory
+	const Factory = await ethers.getContractFactory("UniverseFactory", signer);
+	const UniverseContract = await Factory.deploy(Black.address);
+	const UniverseFactory = await UniverseContract.deployed();
+
+	// Transfer the ownership
+	await Black.transferOwnership(UniverseFactory.address);
+
+	// Log
+	console.log("Signer is:", await Black.owner());
+	console.log("Blackhole Token deployed to:", Black.address);
+	console.log("Universe Factory deployed to:", UniverseFactory.address);
+	console.log("Blackhole Token owner is:", await Black.owner());
 }
 
 main()

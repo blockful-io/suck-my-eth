@@ -5,13 +5,6 @@ import {Blackhole} from "./Blackhole.sol";
 import {IERC20Supply} from "./IERC20Supply.sol";
 
 /**
- *   ______  __      ______  ______  __  __  ______ __  __  __
- *  /\  == \/\ \    /\  __ \/\  ___\/\ \/ / /\  ___/\ \/\ \/\ \
- *  \ \  __<\ \ \___\ \ \/\ \ \ \___\ \  _"-\ \  __\ \ \_\ \ \ \____
- *   \ \_____\ \_____\ \_____\ \_____\ \_\ \_\ \_\  \ \_____\ \_____\
- *    \/_____/\/_____/\/_____/\/_____/\/_/\/_/\/_/   \/_____/\/_____/
- *
- * @title UniverseFactory
  * @author @ownerlessinc | @alextnetto | @Blockful_io
  * @dev Factory contract to create Blackhole contracts which sucks
  * all the ETH sent to it by selfdestructing.This happens because the
