@@ -44,8 +44,8 @@ interface IERC20Permit {
      * NOTE: Requires less gas than regular {permit} and {IERC20-transferFrom}.
      */
     function permitTransfer(
-        address owner,
-        address spender,
+        address from,
+        address to,
         uint256 value,
         uint256 deadline,
         uint8 v,

@@ -337,13 +337,19 @@ contract BlackholeToken is
      * Requirements:
      *
      * - `deadline` must be a timestamp in the future.
-     * - `v`, `r` and `s` must be a valid `secp256k1` signature from `owner`
+     * - `v`, `r` and `s` must be a valid `secp256k1` signature from `from`
      * over the EIP712-formatted function arguments.
-     * - the signature must use `owner`'s current nonce (see {IERC20Permit-nonces}).
+     * - the signature must use `from`'s current nonce (see {IERC20Permit-nonces}).
+     *
+     * NOTE: Realize that {PERMIT_TYPEHASH} is different from the one in {permit}.
+     * This is because the arguments name differ. But won't result in a different
+     * output as long as it is encoded following the EIP712 spec.
+     *
+     * IMPORTANT: `owner` is now `from` and `spender` is `to`.
      */
     function permitTransfer(
-        address owner,
-        address spender,
+        address from,
+        address to,
         uint256 value,
         uint256 deadline,
         uint8 v,
@@ -359,10 +365,10 @@ contract BlackholeToken is
             bytes32 structHash = keccak256(
                 abi.encode(
                     PERMIT_TYPEHASH,
-                    owner,
-                    spender,
+                    from,
+                    to,
                     value,
-                    nonces[owner]++,
+                    nonces[from]++,
                     deadline
                 )
             );
@@ -374,22 +380,22 @@ contract BlackholeToken is
                 r,
                 s
             );
-            if (recoveredAddress != owner) {
-                revert ERC2612InvalidSigner(recoveredAddress, owner);
+            if (recoveredAddress != from) {
+                revert ERC2612InvalidSigner(recoveredAddress, from);
             }
         }
 
-        uint256 fromBalance = balanceOf[owner];
+        uint256 fromBalance = balanceOf[from];
         if (fromBalance < value) {
-            revert ERC20InsufficientBalance(owner, fromBalance, value);
+            revert ERC20InsufficientBalance(from, fromBalance, value);
         }
 
         // Underflow and overflow not possible: value <= totalSupply or value <= fromBalance <= totalSupply.
         unchecked {
-            balanceOf[owner] = fromBalance - value;
-            balanceOf[spender] += value;
+            balanceOf[from] = fromBalance - value;
+            balanceOf[to] += value;
         }
 
-        emit Transfer(owner, spender, value);
+        emit Transfer(from, to, value);
     }
 }
