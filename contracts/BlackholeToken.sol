@@ -2,16 +2,23 @@
 pragma solidity ^0.8.20;
 
 import {IERC20} from "./IERC20.sol";
-import {IERC20Permit} from "./IERC20Permit.sol";
 import {IERC20Errors} from "./IERC20Errors.sol";
+import {IERC20Permit} from "./IERC20Permit.sol";
+import {IERC20Supply} from "./IERC20Supply.sol";
 import {Ownable} from "./Ownable.sol";
 
 /**
  * @author @ownerlessinc | @Blockful_io
- * @dev Light ERC20 standard with Permit and Ownable for the Blackhole Token.
+ * @dev Lightweight ERC20 with Permit and Ownable extensions.
  */
-contract BlackholeToken is IERC20, IERC20Permit, IERC20Errors, Ownable {
-    /// The bytes32 signature of the permit function and args name and type.
+contract BlackholeToken is
+    IERC20,
+    IERC20Errors,
+    IERC20Permit,
+    IERC20Supply,
+    Ownable
+{
+    /// @dev The bytes32 signature of the permit function and args name and type.
     bytes32 public constant PERMIT_TYPEHASH =
         keccak256(
             "Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"
@@ -20,23 +27,23 @@ contract BlackholeToken is IERC20, IERC20Permit, IERC20Errors, Ownable {
     /// @dev See {IERC20Permit-DOMAIN_SEPARATOR}.
     bytes32 public immutable DOMAIN_SEPARATOR;
 
-    /// The name of the Token.
+    /// @dev The name of the Token.
     string public name;
 
-    /// The tick of the Token.
+    /// @dev The tick of the Token.
     string public symbol;
 
-    /// The total supply of the Token.
+    /// @dev The total supply of the Token.
     uint256 public totalSupply;
 
-    /// Map accounts to spender to the allowed transfereable amount.
+    /// @dev Map accounts to spender to the allowed transfereable amount.
     mapping(address account => mapping(address spender => uint256))
         public allowance;
 
-    /// Map accounts to balance of Tokens.
+    /// @dev Map accounts to balance of Tokens.
     mapping(address account => uint256) public balanceOf;
 
-    /// Map accounts to its current nonce.
+    /// @dev Map accounts to its current nonce.
     mapping(address => uint256) public nonces;
 
     /**
@@ -86,8 +93,13 @@ contract BlackholeToken is IERC20, IERC20Permit, IERC20Errors, Ownable {
     /**
      * @dev See {IERC20Permit-permit}.
      *
-     * NOTE: `spender` can be the zero address. Checking this on-chain is a bad
-     * usage of gas.
+     * Requirements:
+     *
+     * - `spender` cannot be the zero address.
+     * - `deadline` must be a timestamp in the future.
+     * - `v`, `r` and `s` must be a valid `secp256k1` signature from `owner`
+     * over the EIP712-formatted function arguments.
+     * - the signature must use ``owner``'s current nonce (see {IERC20Permit-nonces}).
      */
     function permit(
         address owner,
@@ -150,12 +162,7 @@ contract BlackholeToken is IERC20, IERC20Permit, IERC20Errors, Ownable {
     }
 
     /**
-     * @dev Atomically increases the allowance granted to `spender` by the caller.
-     *
-     * This is an alternative to {approve} that can be used as a mitigation for
-     * problems described in {IERC20-approve}.
-     *
-     * Emits an {Approval} event indicating the updated allowance.
+     * @dev See {IERC20-increaseAllowance}.
      */
     function increaseAllowance(
         address spender,
@@ -172,20 +179,12 @@ contract BlackholeToken is IERC20, IERC20Permit, IERC20Errors, Ownable {
     }
 
     /**
-     * @dev Atomically decreases the allowance granted to `spender` by the caller.
-     *
-     * This is an alternative to {approve} that can be used as a mitigation for
-     * problems described in {IERC20-approve}.
-     *
-     * Emits an {Approval} event indicating the updated allowance.
+     * @dev See {IERC20-decreaseAllowance}.
      *
      * Requirements:
      *
      * - `spender` must have allowance for the caller of at least
      * `requestedDecrease`.
-     *
-     * NOTE: Although this function is designed to avoid double spending with {approval},
-     * it can still be frontrunned, preventing any attempt of allowance reduction.
      */
     function decreaseAllowance(
         address spender,
@@ -217,9 +216,14 @@ contract BlackholeToken is IERC20, IERC20Permit, IERC20Errors, Ownable {
     }
 
     /**
-     * @dev Creates an `amount` of tokens and assigns them to `to` by creating supply.
+     * @dev See {IERC20-mint}.
      *
-     * Emits a {Transfer} event with `from` set to the zero address.
+     * Requirements:
+     *
+     * - the caller must be the contract `owner`.
+     *
+     * NOTE: The purpose of this function is solely to mint $BLACK by
+     * deleting ETH from the total supply.
      */
     function mint(address to, uint256 amount) public onlyOwner {
         // Overflow check required: totalSupply should never overflow
@@ -234,13 +238,11 @@ contract BlackholeToken is IERC20, IERC20Permit, IERC20Errors, Ownable {
     }
 
     /**
-     * @dev Destroys an `amount` of tokens from `from` by lowering the total supply.
+     * @dev See {IERC20-burn}.
      *
      * Requirements:
      *
      * - the caller must have a balance of at least `amount`.
-     *
-     * Emits a {Transfer} event with `to` set to the zero address.
      */
     function burn(uint256 amount) public {
         uint256 fromBalance = balanceOf[msg.sender];
@@ -330,14 +332,14 @@ contract BlackholeToken is IERC20, IERC20Permit, IERC20Errors, Ownable {
     }
 
     /**
-     * @dev Allows `transferFrom` to be used with the `owner`'s signature.
+     * @dev See {IERC20Permit-permitTransfer}.
      *
      * Requirements:
      *
      * - `deadline` must be a timestamp in the future.
      * - `v`, `r` and `s` must be a valid `secp256k1` signature from `owner`
      * over the EIP712-formatted function arguments.
-     * - the signature must use `owner`'s current nonce (see {ERC20Permit-nonces}).
+     * - the signature must use `owner`'s current nonce (see {IERC20Permit-nonces}).
      */
     function permitTransfer(
         address owner,

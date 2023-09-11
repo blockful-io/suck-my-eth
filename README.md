@@ -22,7 +22,7 @@ For every Ethereum sucked into the Blackhole a BLACK Token will be minted to the
 - Transfer From: Send Tokens from an authorized `owner` into the `target`'s balance as the `spender`.
 - Permit Transfer: Send Tokens from an authorized `owner` matching the permit `signer` into the `target`'s balance as the `spender`.
 
-## Experiment
+## Test
 
 Run the following commands to experiment
 

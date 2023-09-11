@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import {Blackhole} from "./Blackhole.sol";
+import {IERC20Supply} from "./IERC20Supply.sol";
 
 /**
  *   ______  __      ______  ______  __  __  ______ __  __  __
@@ -19,13 +20,27 @@ import {Blackhole} from "./Blackhole.sol";
  * !IMPORTANT: This permanently reduces the Ethereum total supply.
  */
 contract UniverseFactory {
+    /// @dev The official $BLACK Token address.
+    address public immutable BlackholeToken;
+
+    /**
+     * @dev Sets the value for {BlackholeToken}.
+     */
+    constructor(address blackholeToken) {
+        BlackholeToken = blackholeToken;
+    }
+
     /**
      * @dev Creates a new Blackhole contract and redirects the ETH
      * sent to this function to the new contract.
-     * The contract will be destroyed in the same transaction.
+     *
+     * The amount of ETH deleted is also minted as BLACK tokens for the sender.
+     *
+     * NOTE: The contract will be destroyed in the same transaction.
      */
     receive() external payable {
         Blackhole please = new Blackhole();
         please.suckMyEth{value: msg.value}();
+        IERC20Supply(BlackholeToken).mint(msg.sender, msg.value);
     }
 }

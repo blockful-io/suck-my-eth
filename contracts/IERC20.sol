@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// OpenZeppelin Contracts (last updated v4.9.0) (token/ERC20/IERC20.sol)
 
 pragma solidity ^0.8.20;
 
@@ -8,8 +7,7 @@ pragma solidity ^0.8.20;
  */
 interface IERC20 {
     /**
-     * @dev Emitted when `value` tokens are moved from one account (`from`) to
-     * another (`to`).
+     * @dev Emitted when `value` tokens are moved from `from` to `to`.
      *
      * Note that `value` may be zero.
      */
@@ -34,15 +32,6 @@ interface IERC20 {
      * @dev Returns the value of tokens owned by `account`.
      */
     function balanceOf(address account) external view returns (uint256);
-
-    /**
-     * @dev Moves a `value` amount of tokens from the caller's account to `to`.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * Emits a {Transfer} event.
-     */
-    function transfer(address to, uint256 value) external returns (bool);
 
     /**
      * @dev Returns the remaining number of tokens that `spender` will be
@@ -72,6 +61,43 @@ interface IERC20 {
      * Emits an {Approval} event.
      */
     function approve(address spender, uint256 value) external returns (bool);
+
+    /**
+     * @dev Atomically increases the allowance granted to `spender` by the caller.
+     *
+     * This is an alternative to {approve} that can be used as a mitigation for
+     * problems described in {IERC20-approve}.
+     *
+     * Emits an {IERC20-Approval} event indicating the updated allowance.
+     */
+    function increaseAllowance(
+        address spender,
+        uint256 addedValue
+    ) external returns (bool);
+
+    /**
+     * @dev Atomically decreases the allowance granted to `spender` by the caller.
+     *
+     * This is an alternative to {approve} that can be used as a mitigation for
+     * problems described in {IERC20-approve}.
+     *
+     * Emits an {Approval} event indicating the updated allowance.
+     *
+     * NOTE: Although this function is designed to avoid double spending with {approval},
+     * it can still be frontrunned, preventing any attempt of allowance reduction.
+     */
+    function decreaseAllowance(
+        address spender,
+        uint256 requestedDecrease
+    ) external returns (bool);
+
+    /**
+     * @dev Moves a `value` amount of tokens from the caller's account to `to`.
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * Emits a {Transfer} event.
+     */
+    function transfer(address to, uint256 value) external returns (bool);
 
     /**
      * @dev Moves a `value` amount of tokens from `from` to `to` using the
