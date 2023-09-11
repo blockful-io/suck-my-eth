@@ -57,7 +57,7 @@ abstract contract Ownable {
      */
     function transferOwnership(address _newOwner) public virtual onlyOwner {
         _owner = _newOwner;
-        // what is cheaper to use? local or calldata
+
         emit OwnershipTransferred(msg.sender, _owner);
     }
 
