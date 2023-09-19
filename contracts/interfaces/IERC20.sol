@@ -7,13 +7,6 @@ pragma solidity ^0.8.20;
  */
 interface IERC20 {
     /**
-     * @dev Emitted when `value` tokens are moved from `from` to `to`.
-     *
-     * Note that `value` may be zero.
-     */
-    event Transfer(address indexed from, address indexed to, uint256 value);
-
-    /**
      * @dev Emitted when the allowance of a `spender` for an `owner` is set by
      * a call to {approve}. `value` is the new allowance.
      */
@@ -22,6 +15,28 @@ interface IERC20 {
         address indexed spender,
         uint256 value
     );
+
+    /**
+     * @dev Emitted when `value` tokens are moved from `from` to `to`.
+     *
+     * NOTE: `value` can be zero.
+     */
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    /**
+     * @dev Returns the name of the token.
+     */
+    function name() external view returns (string memory);
+
+    /**
+     * @dev Returns the symbol of the token.
+     */
+    function symbol() external view returns (string memory);
+
+    /**
+     * @dev Returns the decimals places of the token.
+     */
+    function decimals() external view returns (uint8);
 
     /**
      * @dev Returns the value of tokens in existence.
@@ -39,6 +54,9 @@ interface IERC20 {
      * zero by default.
      *
      * This value changes when {approve} or {transferFrom} are called.
+     *
+     * NOTE: If `value` is the maximum `uint256`, the allowance is not updated on
+     * `transferFrom`. This is semantically equivalent to an infinite approval.
      */
     function allowance(
         address owner,

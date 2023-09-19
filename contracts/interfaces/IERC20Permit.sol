@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// OpenZeppelin Contracts (last updated v4.9.0) (token/ERC20/extensions/IERC20Permit.sol)
 
 pragma solidity ^0.8.20;
 
@@ -12,47 +11,6 @@ pragma solidity ^0.8.20;
  * need to send a transaction, and thus is not required to hold Ether at all.
  */
 interface IERC20Permit {
-    /**
-     * @dev Sets `value` as the allowance of `spender` over `owner`'s tokens,
-     * given `owner`'s signed approval.
-     *
-     * IMPORTANT: The same issues {IERC20-approve} has related to transaction
-     * ordering also apply here.
-     *
-     * Emits an {IERC20-Approval} event.
-     *
-     * NOTE: `spender` can be the zero address. Checking this on-chain is a bad
-     * usage of gas. For more information on the signature format, see the
-     * https://eips.ethereum.org/EIPS/eip-2612#specification[relevant EIP
-     * section].
-     */
-    function permit(
-        address owner,
-        address spender,
-        uint256 value,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
-    ) external;
-
-    /**
-     * @dev Allows {IERC20-transferFrom} to be used with the `owner`'s signature.
-     * Similar to permit but changing the scope to handle the balance instead of
-     * allowance.
-     *
-     * NOTE: Requires less gas than regular {permit} and {IERC20-transferFrom}.
-     */
-    function permitTransfer(
-        address from,
-        address to,
-        uint256 value,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
-    ) external;
-
     /**
      * @dev Returns the current nonce for `owner`. This value must be
      * included whenever a signature is generated for {permit}.
@@ -67,4 +25,52 @@ interface IERC20Permit {
      */
     // solhint-disable-next-line func-name-mixedcase
     function DOMAIN_SEPARATOR() external view returns (bytes32);
+
+    /**
+     * @dev Sets `value` as the allowance of `spender` over `owner`'s tokens,
+     * given `owner`'s signed approval.
+     *
+     * IMPORTANT: The same issues {IERC20-approve} has related to transaction
+     * ordering also apply here.
+     *
+     * Emits an {IERC20-Approval} event.
+     *
+     * NOTE: `spender` can be the zero address. Checking this on-chain is a bad
+     * usage of gas. For more information on the signature format, see the
+     * https://eips.ethereum.org/EIPS/eip-2612#specification[relevant EIPsection].
+     */
+    function permit(
+        address owner,
+        address spender,
+        uint256 value,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external returns (bool);
+
+    /**
+     * @dev Allows {IERC20-transferFrom} to be used with the `owner`'s signature.
+     * Similar to permit but changing the scope to handle the balance instead of
+     * allowance.
+     *
+     * Requires less gas than regular {permit} and {IERC20-transferFrom}.
+     *
+     * IMPORTANT: `owner` works as `from` and `spender` as `to` (see {IERC20Permit-permit}).
+     *
+     * Emits an {IERC20-Transfer} event.
+     *
+     * NOTE: Realize that {PERMIT_TYPEHASH} is different from the one in {permit}.
+     * This is because the arguments name differ. But won't result in a different
+     * output as long as it is encoded following the EIP712 and ERC20Permit specs.
+     */
+    function permitTransfer(
+        address from,
+        address to,
+        uint256 value,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external returns (bool);
 }
